@@ -7,9 +7,9 @@
 CodeCell myCodeCell;
 
 const char* ssid = "eduroam";
-const char* identity = "at102570@edu.aarhustech.dk"; //SKOLE EMAIL
-const char* username = "at102570@edu.aarhustech.dk"; //SKOLE EMAIL
-const char* password = "***REMOVED***"; //KODEORD TIL EMAIL
+const char* identity = ""; //SKOLE EMAIL
+const char* username = ""; //SKOLE EMAIL
+const char* password = ""; //KODEORD TIL EMAIL
 
 WebServer server(80);
 
