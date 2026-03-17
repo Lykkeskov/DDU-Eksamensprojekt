@@ -1,6 +1,6 @@
 '''
 Denne kode er til "Prototype - funktionalitet 0", hvor det undersøgtes om en kameraløsning ville fungere godt.
-Denne kode bruges ikke længere.
+Denne kode bruges ikke længere. Se rapport for yderligere information.
 Følgende kode er hentet fra: https://github.com/iamramzan/Full-Body-Detection/blob/main/Full%20Body%20Detection.py
 En forklaring af koden kan findes i artiklen her: https://medium.com/@iamramzan/full-body-detection-with-opencv-and-mediapipe-3b80cfc131ec
 '''
