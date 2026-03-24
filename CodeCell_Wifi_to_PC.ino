@@ -14,20 +14,60 @@ const char* password = ""; //KODEORD TIL EMAIL
 WebServer server(80);
 
 void handleRoot() {
-    int proximityValue = myCodeCell.Light_ProximityRead(); // Read proximity sensor
-    String response = "Proximity: "; 
-    response += String(proximityValue);
-    server.send(200, "text/html", response);  
+      int proximity = myCodeCell.Light_ProximityRead();
+
+    float ax, ay, az;
+    float gx, gy, gz;
+
+    myCodeCell.Motion_AccelerometerRead(ax, ay, az);
+    myCodeCell.Motion_GyroRead(gx, gy, gz);
+
+    // Build JSON json
+    String json = "{";
+    json += "\"proximity\":" + String(proximity) + ",";
+
+    json += "\"accelerometer\":{";
+    json += "\"x\":" + String(ax) + ",";
+    json += "\"y\":" + String(ay) + ",";
+    json += "\"z\":" + String(az) + "},";
+
+    json += "\"gyroscope\":{";
+    json += "\"x\":" + String(gx) + ",";
+    json += "\"y\":" + String(gy) + ",";
+    json += "\"z\":" + String(gz) + "}";
+
+    json += "}";
+
+    server.send(200, "application/json", json);
 
 }
 
 void sendData(int value) {
     HTTPClient http;
 
-    http.begin("http://10.147.131.14:5000/data"); // your computer server
+    http.begin("http://10.147.131.95:5000/data"); // your computer server
     http.addHeader("Content-Type", "application/json");
+    
+    float ax, ay, az;
+    float gx, gy, gz;
 
-    String json = "{\"proximity\":" + String(value) + "}";
+    myCodeCell.Motion_AccelerometerRead(ax, ay, az);
+    myCodeCell.Motion_GyroRead(gx, gy, gz);
+
+    // Build JSON json
+    String json = "{";
+    json += "\"accelerometer\":{";
+    json += "\"x\":" + String(ax) + ",";
+    json += "\"y\":" + String(ay) + ",";
+    json += "\"z\":" + String(az) + "},";
+
+    json += "\"gyroscope\":{";
+    json += "\"x\":" + String(gx) + ",";
+    json += "\"y\":" + String(gy) + ",";
+    json += "\"z\":" + String(gz) + "}";
+
+    json += "}";
+
 
     int httpResponseCode = http.POST(json);
 
