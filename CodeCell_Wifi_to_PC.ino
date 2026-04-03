@@ -12,13 +12,13 @@ const char* password = ""; //KODEORD TIL EMAIL
 
 
 const char* identity = ""; //SKOLE EMAIL
-const char* username = ""; //SKOLE EMAIL
+const char* username = ""; //SKOLE EMAIL 
 
 
 void sendData() {
     HTTPClient http;
 
-    http.begin("http://192.168.0.243:5000/data");
+    http.begin("http://000.00.000:5000/data");
     http.addHeader("Content-Type", "application/json");
     
     float ax, ay, az;
@@ -58,16 +58,15 @@ void sendData() {
 
 void setup() {
     Serial.begin(115200);
-    myCodeCell.Init(LIGHT + MOTION_ACCELEROMETER + MOTION_ROTATION); // Set up CodeCell's light sensor
+    myCodeCell.Init(MOTION_ACCELEROMETER + MOTION_ROTATION + MOTION_LINEAR_ACC); // Set up CodeCell's light sensor
     WiFi.disconnect(true);
     WiFi.mode(WIFI_STA);
-
 
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)identity, strlen(identity));
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)username, strlen(username));
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password));  
 
-    esp_wifi_sta_wpa2_ent_enable();
+    esp_wifi_sta_wpa2_ent_enable();   
 
     WiFi.begin(ssid, password);
 
