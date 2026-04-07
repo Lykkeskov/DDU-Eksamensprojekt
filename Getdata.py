@@ -31,15 +31,16 @@ def receive_data():
     linz = float(linear_acceleration.get("lz"))
 
     slag_condition = (              #Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-            abs(ay) > 5 and
-            abs(liny) > 0 and
-            145 <= abs(roll) <= 180 and
-            120 <= abs(pitch) <= 180
-    )
+            ay > 8 and
+            liny > 12 )
+    '''and
+    100 <= abs(roll) <= 180 and
+    110 <= abs(pitch) <= 180 '''
+
 
     guard_condition = (abs(liny) < 2 and    #Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
                        -110 < roll < 70 and
-                       5 < abs(ay))
+                       ay < -6)
 
     if slag_condition and slagAktiv == False:
         slagAktiv = True #Bruges til at forhindre dobbelt registrering af slag
@@ -58,7 +59,8 @@ def receive_data():
         print("Accelerometer: ", ax, ay, az)
         print("Linear Acceleration: ", linx, liny, linz)
         print("Motion: ", roll, pitch, yaw)
-        print("Tid: ", time.time()-lastSlagTime)
+        print("Tid: ", time.time()-lastSlagTime,
+              "\n")
 
     if time.time()-lastSlagTime >= cooldown:
         slagAktiv = False
