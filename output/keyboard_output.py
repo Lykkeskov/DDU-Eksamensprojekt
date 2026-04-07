@@ -3,11 +3,15 @@ from pynput.keyboard import Controller, Key
 keyboard = Controller()
 
 key_map = {
-    "→": Key.right,
-    "←": Key.left,
-    "↑": Key.up,
-    "↓": Key.down,
-    "1": "j"   # map punch to J key
+    "→": "d",
+    "←": "a",
+    "↓": "s",
+    "↑": "w",
+    "1": "j",
+    "2": "i",
+    "3": "k",
+    "4": "l",
+    "BL": "space"
 }
 
 def send(inputs):

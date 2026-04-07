@@ -1,49 +1,32 @@
 from flask import Flask, request
-import logging
-
-from detectors.punch_detector import PunchDetector
-from detectors.direction_detector import DirectionDetector
-from game.game_input import GameInputMapper
+from game.action_processor import ActionProcessor
 from game.input_buffer import InputBuffer
+from game.combo_detector import ComboDetector
 from output.keyboard_output import send
-
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
-punch_detector = PunchDetector()
-direction_detector = DirectionDetector()
-mapper = GameInputMapper()
+processor = ActionProcessor()
 buffer = InputBuffer()
+combo_detector = ComboDetector()
 
 
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.get_json()
 
-    motion = data.get("motion", {})
-    lin = data.get("lin", {})
+    # TEMP: simulate actions (skift med rigtige senere)
+    actions = data.get("actions", [])
 
-    roll = float(motion.get("roll", 0))
-    pitch = float(motion.get("pitch", 0))
+    inputs = processor.process(actions)
 
-    lx = float(lin.get("lx", 0))
-    ly = float(lin.get("ly", 0))
-    lz = float(lin.get("lz", 0))
+    buffer.add(inputs)
 
-    # Detect actions
-    punch = punch_detector.detect(lx, ly, lz)
-    direction = direction_detector.detect(roll, pitch)
+    combo = combo_detector.detect(buffer.get())
 
-    # Map to game inputs
-    inputs = mapper.map(punch=punch, direction=direction)
+    if combo:
+        print("COMBO:", combo)
 
-    # Add to buffer
-    for i in inputs:
-        buffer.add(i)
-
-    # Send to game
     send(inputs)
 
     if inputs:
