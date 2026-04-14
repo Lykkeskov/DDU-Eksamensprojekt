@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import mss
 import time
+import requests
 
 # Indstil alt efter hvor det er.
 # Lige nu passer det til en video på youtube, hvor browseren kun fylder halvdelen af skærmen.
@@ -20,6 +21,18 @@ UPPER_YELLOW = np.array([40, 255, 255])
 prev_health_ratio = None
 THRESHOLD = 0.001  # Juster følsomheden hvis det er nødvendigt
 
+last_vibration_time = 0
+COOLDOWN = 0.5  # seconds
+
+CODECELL_IP = "YOUR_CODECELL_IP" # Husk at Indsætte
+
+def vibrate():
+    try:
+        requests.get(f"http://{CODECELL_IP}/vibrate", timeout=0.2)
+    except:
+        print("Failed to send vibration signal")
+
+
 with mss.mss() as sct:
     while True:
         screenshot = sct.grab(HEALTH_BAR_REGION)
@@ -37,7 +50,6 @@ with mss.mss() as sct:
 
         # Count yellow pixels
         health_pixels = np.sum(mask > 0)
-
         total_pixels = HEALTH_BAR_REGION["width"] * HEALTH_BAR_REGION["height"]
         health_ratio = health_pixels / total_pixels
 
@@ -47,7 +59,11 @@ with mss.mss() as sct:
             diff = prev_health_ratio - health_ratio
 
             if diff > THRESHOLD:
-                print("---> DAMAGE DETECTED <---")
+                now = time.time()
+                if now - last_vibration_time > COOLDOWN:
+                    print("---> DAMAGE DETECTED <---")
+                    vibrate()
+                    last_vibration_time = now
 
         prev_health_ratio = health_ratio
 
