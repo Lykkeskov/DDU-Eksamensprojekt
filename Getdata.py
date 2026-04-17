@@ -13,7 +13,7 @@ CHAR_UUID = "abcd5678-abcd-5678-abcd-56789abcdef0"
 
 slagAktiv = False
 lastSlagTime = 0  #Tidspunkt for sidste slag
-cooldown = 0.3  #Cooldown mellem slag i sekunder (300 ms)
+cooldown = 1  #Cooldown mellem slag i sekunder (300 ms)
 
 
 def make_handler(name):
@@ -35,15 +35,15 @@ def make_handler(name):
         zLinAcceleration = float(values[8])
 
         slag_condition = (  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                abs(yAcceleration) > 10 and
-                abs(yLinAcceleration) > 17 and
-                145 <= abs(roll) <= 180 and
-                110 <= abs(pitch) <= 180
-        )
+                abs(yAcceleration) > 6 and
+                abs(yLinAcceleration) > 7)
 
-        guard_condition = (abs(yLinAcceleration) < 2 and  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                           -110 < roll < -70 and
-                           yAcceleration < -6)
+
+            #and 145 <= abs(roll) <= 180 and 110 <= abs(pitch) <= 180'''
+
+        guard_condition = (abs(yLinAcceleration) < 2 and abs(yAcceleration) > 6 # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+                           #-110 < roll < -70 and
+                           )
 
         if slag_condition and slagAktiv == False:
             slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
@@ -53,16 +53,19 @@ def make_handler(name):
                   "\n"
                   "\n")
 
-        elif guard_condition:
+        elif guard_condition and slagAktiv == False:
             print(f"\n[{name}] ", "Guard registreret"
                   "\n"
                   "\n"
                   "\n")
         else:
-            '''print(f"\n[{name}]")
+            print(f"\n[{name}]")
             print("Accel:", "x", xAcceleratinon, "y", yAcceleration, "z", zAcceleration)
             print("Rot  :", "Roll", roll, "Pitch",pitch, "Yaw",yaw)
-            print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)'''
+            print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)
+
+
+
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
