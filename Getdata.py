@@ -1,70 +1,90 @@
-from flask import Flask, request
-import logging
+import asyncio
+from bleak import BleakClient
 import time
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)  # Only show errors
-app = Flask(__name__)
+Devices = {
+    "CodeCell_Right": "28:37:2F:C7:C5:D2",
+    "CodeCell_Left": "98:3D:AE:38:32:0E"
+}
+
+
+CHAR_UUID = "abcd5678-abcd-5678-abcd-56789abcdef0"
+
 
 slagAktiv = False
 lastSlagTime = 0  #Tidspunkt for sidste slag
 cooldown = 0.3  #Cooldown mellem slag i sekunder (300 ms)
-@app.route('/data', methods=['POST'])
-def receive_data():
-    global slagAktiv, lastSlagTime, cooldown
-    data = request.get_json()
-
-    accelerometer = data.get("accelerometer", {})
-    motion = data.get("motion", {})
-    linear_acceleration = data.get("lin", {})
-
-    ax = float(accelerometer.get("x"))
-    ay = float(accelerometer.get("y"))
-    az = float(accelerometer.get("z"))
-
-    pitch = float(motion.get("pitch")) #Ift hvordan vi vender C3 så skal pitch og roll byttes rundt
-    roll = float(motion.get("roll"))
-    yaw = float(motion.get("yaw"))
-
-    linx = float(linear_acceleration.get("lx"))
-    liny = float(linear_acceleration.get("ly"))
-    linz = float(linear_acceleration.get("lz"))
-
-    slag_condition = (              #Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-            ay > 8 and
-            liny > 12 )
-    '''and
-    100 <= abs(roll) <= 180 and
-    110 <= abs(pitch) <= 180 '''
 
 
-    guard_condition = (abs(liny) < 2 and    #Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                       -110 < roll < 70 and
-                       ay < -6)
+def make_handler(name):
+    def notification_handler(sender, data):
+        global slagAktiv, lastSlagTime, cooldown
 
-    if slag_condition and slagAktiv == False:
-        slagAktiv = True #Bruges til at forhindre dobbelt registrering af slag
-        lastSlagTime = time.time() #Definerer nu tidspunktet for slaget så cooldown kan bruges korrekt
-        print("Slag registreret ",
-              "\n"
-              "\n"
-              "\n")
-    elif guard_condition:
-        print("Guard registreret ",
-              "\n"
-              "\n"
-              "\n")
+        values = data.decode().split(",")
 
-    else:
-        print("Accelerometer: ", ax, ay, az)
-        print("Linear Acceleration: ", linx, liny, linz)
-        print("Motion: ", roll, pitch, yaw)
-        print("Tid: ", time.time()-lastSlagTime,
-              "\n")
+        xAcceleratinon = float(values[0]) #Acceleratinoerne hen af de forskellige akser
+        yAcceleration = float(values[1])
+        zAcceleration = float(values[2])
 
-    if time.time()-lastSlagTime >= cooldown:
-        slagAktiv = False
+        roll = float(values[3]) #Rotation af codecellen
+        pitch = float(values[4])
+        yaw = float(values[5])
 
-    return "OK", 200
+        xLinAcceleration = float(values[6]) #Den linæer acceleration hvilket trækker tyngdekraften
+        yLinAcceleration = float(values[7])
+        zLinAcceleration = float(values[8])
 
-app.run(host='0.0.0.0', port=5000)
+        slag_condition = (  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+                abs(yAcceleration) > 10 and
+                abs(yLinAcceleration) > 17 and
+                145 <= abs(roll) <= 180 and
+                110 <= abs(pitch) <= 180
+        )
+
+        guard_condition = (abs(yLinAcceleration) < 2 and  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+                           -110 < roll < -70 and
+                           yAcceleration < -6)
+
+        if slag_condition:
+            slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
+            lastSlagTime = time.time()  # Definerer nu tidspunktet for slaget så cooldown kan bruges korrekt
+            print(f"\n[{name}] ", "Slag registreret"
+                  "\n"
+                  "\n"
+                  "\n")
+
+        elif guard_condition:
+            print(f"\n[{name}] ", "Guard registreret"
+                  "\n"
+                  "\n"
+                  "\n")
+        else:
+            '''print(f"\n[{name}]")
+            print("Accel:", "x", xAcceleratinon, "y", yAcceleration, "z", zAcceleration)
+            print("Rot  :", "Roll", roll, "Pitch",pitch, "Yaw",yaw)
+            print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)'''
+
+        if time.time() - lastSlagTime >= cooldown:
+            slagAktiv = False
+    return notification_handler
+
+
+async def connect_device(name, address):
+    async with BleakClient(address) as client:
+        print(f"{name} connected")
+
+        await client.start_notify(CHAR_UUID, make_handler(name))
+
+        while True:
+            await asyncio.sleep(1)
+
+
+async def main():
+    tasks = []
+
+    for name, address in Devices.items():
+        tasks.append(connect_device(name, address))
+    await asyncio.gather(*tasks)
+
+
+asyncio.run(main())
