@@ -45,7 +45,7 @@ def make_handler(name):
                            -110 < roll < -70 and
                            yAcceleration < -6)
 
-        if slag_condition:
+        if slag_condition and slagAktiv == False:
             slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
             lastSlagTime = time.time()  # Definerer nu tidspunktet for slaget så cooldown kan bruges korrekt
             print(f"\n[{name}] ", "Slag registreret"
