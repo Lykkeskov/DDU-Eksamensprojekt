@@ -34,6 +34,22 @@ def receive_data():
 
     return "OK", 200
 
+from communication.ble_client import BLEClient
+import asyncio
+
+ble = BLEClient()
+
+async def main():
+    await ble.connect()
+
+    while True:
+        # Access flex
+        if ble.flex < 200:
+            print("FIST")
+
+        await asyncio.sleep(0.01)
+
+asyncio.run(main())
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
