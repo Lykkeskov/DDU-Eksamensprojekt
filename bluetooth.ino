@@ -24,9 +24,9 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
 void setup() {
     Serial.begin(115200);
-    myCodeCell.Init(LIGHT); // Initialize light and proximity sensor
+     myCodeCell.Init(MOTION_ACCELEROMETER + MOTION_ROTATION + MOTION_LINEAR_ACC); // Initializer alle sensorer
 
-    BLEDevice::init("CodeCell_BLE"); // Name the BLE device
+    BLEDevice::init("CodeCell_Left"); // Name the BLE device
     BLEServer *bleServer = BLEDevice::createServer();
     bleServer->setCallbacks(new MyServerCallbacks());
 
@@ -48,13 +48,17 @@ void setup() {
 
 void loop() {
     if (myCodeCell.Run(10)) { // Read every 100ms (10Hz)
-        uint16_t proximity = myCodeCell.Light_ProximityRead();
-        Serial.print("Proximity: ");
-        Serial.println(proximity);
+        float ax, ay, az;
+        float rx, ry, rz;
+        float lx, ly, lz;
+        
+        myCodeCell.Motion_AccelerometerRead(ax, ay, az);
+        myCodeCell.Motion_RotationRead(rx, ry, rz);
+        myCodeCell.Motion_LinearAccRead(lx, ly, lz);
 
-        // Convert proximity value to string and send over BLE
-        String proximityStr = String(proximity);
-        pSensorCharacteristic->setValue(proximityStr.c_str());
-        pSensorCharacteristic->notify(); // Notify connected device
+        // Konverterer værdierne til en string  og sender derefter over Bluetooth
+        String data = String(ax) + "," + String(ay) + "," + String(az) + "," + String(rx) + "," + String(ry) + "," + String(rz) + "," + String(lx) + "," + String(ly) + "," + String(lz);
+        pSensorCharacteristic->setValue(data.c_str());
+        pSensorCharacteristic->notify();
     }
 }
