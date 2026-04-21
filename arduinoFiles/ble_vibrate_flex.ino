@@ -2,7 +2,6 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
-
 #include <CodeCell.h>
 CodeCell myCodeCell;
 
@@ -26,7 +25,7 @@ int vibrateDuration = 200;
 
 // Flex threshold
 // High values = open hand, low values = closed fist
-int threshold = 1150;
+int threshold = 1400; // Juster evt. afhængigt af flex sesnor
 
 // RECEIVE COMMAND
 class CommandCallback : public BLECharacteristicCallbacks {
@@ -36,7 +35,8 @@ class CommandCallback : public BLECharacteristicCallbacks {
     if (value == "V") {
       Serial.println("VIBRATE");
 
-      digitalWrite(motorPin, HIGH);
+      // low = on, high = off
+      digitalWrite(motorPin, LOW);
       vibrating = true;
       vibrateStart = millis();
     }
@@ -51,7 +51,7 @@ void setup() {
     myCodeCell.Init(MOTION_ACCELEROMETER + MOTION_ROTATION + MOTION_LINEAR_ACC);
 
     pinMode(motorPin, OUTPUT);
-    digitalWrite(motorPin, LOW);
+    digitalWrite(motorPin, HIGH);
 
     pinMode(flexPin, INPUT);
 
@@ -121,7 +121,7 @@ void loop() {
     }
 
     if (vibrating && millis() - vibrateStart > vibrateDuration) {
-        digitalWrite(motorPin, LOW);
+        digitalWrite(motorPin, HIGH);
         vibrating = false;
     }
 }
