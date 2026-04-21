@@ -3,8 +3,8 @@ from bleak import BleakClient
 import time
 
 devices = {
-    "CodeCell_Right": "28:37:2F:C7:C5:D2",
     "CodeCell_Left": "98:3D:AE:38:32:0E",
+    "CodeCell_Right": "28:37:2F:C7:C5:D2",
     "StepSensor_Left" : "E0:5A:1B:A0:32:96",
     "StepSensor_Right" : "B4:8A:0A:8F:0D:DA"
 }
@@ -74,7 +74,7 @@ def pressurePlateHandler(name, data):
 def make_handler(name):
     def notification_handler(sender, data):
 
-        if "Codecell" in name:
+        if "CodeCell" in name:
             codecellHandler(name, data)
 
         elif "StepSensor" in name:
