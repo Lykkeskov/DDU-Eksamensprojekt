@@ -6,10 +6,10 @@
 #include <CodeCell.h>
 CodeCell myCodeCell;
 
-BLECharacteristic *pSensorCharacteristic = NULL;
-#define SENSOR_UUID "abcd5678-abcd-5678-abcd-56789abcdef0"
+BLECharacteristic *pSensorCharacteristic = NULL; //'*' er en pointer, hvilket den begynder på at gemmer på memory adresser. Man bruger null så den ikke pointer til en random memory adresse.
+#define SENSOR_UUID "abcd5678-abcd-5678-abcd-56789abcdef0" 
 
-class MyServerCallbacks : public BLEServerCallbacks {
+class MyServerCallbacks : public BLEServerCallbacks { //Class fortæller hvis nogen forbinder og afbryder forbindelsen. 
   void onConnect(BLEServer *pServer) override {
     Serial.println("BLE Connected");
     delay(1000);
@@ -27,21 +27,21 @@ void setup() {
      myCodeCell.Init(MOTION_ACCELEROMETER + MOTION_ROTATION + MOTION_LINEAR_ACC); // Initializer alle sensorer
 
     BLEDevice::init("CodeCell_Left"); // Name the BLE device
-    BLEServer *bleServer = BLEDevice::createServer();
-    bleServer->setCallbacks(new MyServerCallbacks());
+    BLEServer *bleServer = BLEDevice::createServer(); //Laver CodeCell c3 til en BLE server
+    bleServer->setCallbacks(new MyServerCallbacks()); //Serveren ved hvornår noget forbinder og afbryder forbindelsen. 
 
-    BLEService *bleService = bleServer->createService(BLEUUID("12345678-1234-5678-1234-56789abcdef0"));
+    BLEService *bleService = bleServer->createService(BLEUUID("12345678-1234-5678-1234-56789abcdef0")); //serveren laver en service (hvilket er en obtainer/gruppe) som vil indholde charateristic
 
     // Create BLE characteristic for sensor data
-    pSensorCharacteristic = bleService->createCharacteristic(
+    pSensorCharacteristic = bleService->createCharacteristic( 
         SENSOR_UUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY //computeren kan både læse, men også få dataen. 
     );
-    pSensorCharacteristic->addDescriptor(new BLE2902());
+    pSensorCharacteristic->addDescriptor(new BLE2902()); //laver en standard BLE descriptor ( Descriptors are defined attributes that describe a characteristic value)
 
-    bleService->start();
+    bleService->start(); 
 
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising(); //gør så man kan forbinde computeren til CodeCell c3
     pAdvertising->addServiceUUID("12345678-1234-5678-1234-56789abcdef0");
     BLEDevice::startAdvertising();
 }
