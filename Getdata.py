@@ -41,28 +41,30 @@ async def trigger_vibration_all():
 def make_handler(name):
     def notification_handler(sender, data):
         global slagAktiv, lastSlagTime, cooldown
-        '''
-        values = data.decode().split(",")
 
-        xAcceleratinon = float(values[0]) #Acceleratinoerne hen af de forskellige akser
-        yAcceleration = float(values[1])
-        zAcceleration = float(values[2])
+        text = data.decode().strip()
+        print(f"[{name}] RAW:", text)
 
-        roll = float(values[3]) #Rotation af codecellen
-        pitch = float(values[4])
-        yaw = float(values[5])
+        # Step sensor input
+        if "StepSensor" in name:
+            try:
+                stepValue = int(text)
 
-        xLinAcceleration = float(values[6]) #Den linæer acceleration hvilket trækker tyngdekraften
-        yLinAcceleration = float(values[7])
-        zLinAcceleration = float(values[8])
-        '''
+                if stepValue == 1:
+                    print(f"[{name}] Skridt registreret")
 
+            except Exception as e:
+                print("Step parse error:", e)
+
+            return
+
+
+        # CodeCell hanske input
         try:
             parsed = json.loads(data.decode())
         except Exception as e:
             print("JSON error:", e)
             return
-
 
         # Extract values
         flexValue = parsed["flex"]
