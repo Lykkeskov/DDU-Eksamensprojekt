@@ -28,7 +28,7 @@ void setup() {
 
     BLEDevice::init("CodeCell_Left"); // Name the BLE device
     BLEServer *bleServer = BLEDevice::createServer(); //Laver CodeCell c3 til en BLE server
-    bleServer->setCallbacks(new MyServerCallbacks()); //Sever ved hvornår noget forbinder og afbryder forbindelsen. 
+    bleServer->setCallbacks(new MyServerCallbacks()); //Serveren ved hvornår noget forbinder og afbryder forbindelsen. 
 
     BLEService *bleService = bleServer->createService(BLEUUID("12345678-1234-5678-1234-56789abcdef0")); //serveren vil indholde charateristic
 
