@@ -9,7 +9,7 @@ CodeCell myCodeCell;
 BLECharacteristic *pSensorCharacteristic = NULL; //'*' er en pointer, hvilket begynder den gemmer på memory adresser. Man bruger null så den ikke pointer til en random memory adresse.
 #define SENSOR_UUID "abcd5678-abcd-5678-abcd-56789abcdef0" 
 
-class MyServerCallbacks : public BLEServerCallbacks { //Class gør så den forbinder og afbryder forbindelsen. 
+class MyServerCallbacks : public BLEServerCallbacks { //Class fortæller hvis nogen forbinder og afbryder forbindelsen. 
   void onConnect(BLEServer *pServer) override {
     Serial.println("BLE Connected");
     delay(1000);
