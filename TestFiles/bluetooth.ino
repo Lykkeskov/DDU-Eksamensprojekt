@@ -37,7 +37,7 @@ void setup() {
         SENSOR_UUID,
         BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY //computeren kan både læse, men også få dataen. 
     );
-    pSensorCharacteristic->addDescriptor(new BLE2902()); //laver en standard BLE descriptor
+    pSensorCharacteristic->addDescriptor(new BLE2902()); //laver en standard BLE descriptor ( Descriptors are defined attributes that describe a characteristic value)
 
     bleService->start(); 
 
