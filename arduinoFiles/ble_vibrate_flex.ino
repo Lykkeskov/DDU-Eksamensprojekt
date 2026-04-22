@@ -25,7 +25,7 @@ int vibrateDuration = 200;
 
 // Flex threshold
 // High values = open hand, low values = closed fist
-int threshold = 1400; // Juster evt. afhængigt af flex sesnor
+int threshold = 1150; // Juster evt. afhængigt af flex sesnor
 
 // RECEIVE COMMAND
 class CommandCallback : public BLECharacteristicCallbacks {
@@ -57,7 +57,7 @@ void setup() {
 
     analogReadResolution(12); // 0-4095
 
-    BLEDevice::init("CodeCell_1");
+    BLEDevice::init("CodeCell_Right"); // Husk at tilpasse alt efter hbilken side det er!
 
     BLEServer *server = BLEDevice::createServer();
     BLEService *service = server->createService(SERVICE_UUID);
@@ -95,7 +95,7 @@ void loop() {
 
         int flexValue = analogRead(flexPin);
 
-        bool isFist = flexValue < 1150;
+        bool isFist = flexValue < threshold;
 
         Serial.print("Flex: ");
         Serial.print(flexValue);
