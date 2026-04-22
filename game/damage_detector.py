@@ -61,6 +61,7 @@ async def main():
                     if now - last_vibration_time > COOLDOWN:
                         print("DAMAGE DETECTED")
                         await vibrate_device("CodeCell_Left")
+                        await vibrate_device("CodeCell_Right")
                         last_vibration_time = now
 
                     damage_frames = 0
@@ -75,4 +76,5 @@ async def main():
     cv2.destroyAllWindows()
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

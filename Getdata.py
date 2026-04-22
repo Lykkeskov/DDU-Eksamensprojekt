@@ -2,6 +2,10 @@ import asyncio
 from bleak import BleakClient, BleakScanner
 import time
 import json
+from output.keyboard_output import send
+from game.game_input import GameInputMapper
+
+mapper = GameInputMapper()
 
 ble_clients = {}
 COMMAND_UUID = "dcba4321-dcba-4321-dcba-4321fedcba98"
@@ -21,6 +25,7 @@ async def discover_devices():
     available = {}
 
     for d in found:
+        print("FOUND:", d.name, d.address)
         if d.name in Devices:
             available[d.name] = d.address
 
@@ -106,11 +111,21 @@ def make_handler(name):
                   "\n"
                   "\n")
 
+            # Sender inputs så vi kan konvertere til keyboard input
+            inputs = mapper.map(punch=True)
+            send(inputs)
+            print(f"[{name}] Slag → {inputs}")
+
         elif guard_condition and not slagAktiv:
             print(f"\n[{name}] ", "Guard registreret"
                   "\n"
                   "\n"
                   "\n")
+
+            inputs = ["BL"]  # mapped to space
+            send(inputs)
+
+            print(f"[{name}] GUARD")
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
@@ -135,6 +150,9 @@ def pressurePlateHandler(name, data):
 
         if value == "1":
             print(f"[{name}] STEP DETECTED")
+            inputs = ["→"]
+            send(inputs)
+            print(f"[{name}] STEP → {inputs}")
 
     except Exception as e:
         print("Pressure parse error:", e)
