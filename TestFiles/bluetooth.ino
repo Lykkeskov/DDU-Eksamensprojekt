@@ -30,7 +30,7 @@ void setup() {
     BLEServer *bleServer = BLEDevice::createServer(); //Laver CodeCell c3 til en BLE server
     bleServer->setCallbacks(new MyServerCallbacks()); //Serveren ved hvornår noget forbinder og afbryder forbindelsen. 
 
-    BLEService *bleService = bleServer->createService(BLEUUID("12345678-1234-5678-1234-56789abcdef0")); //serveren vil indholde charateristic
+    BLEService *bleService = bleServer->createService(BLEUUID("12345678-1234-5678-1234-56789abcdef0")); //serveren laver en service (hvilket er en obtainer/gruppe) som vil indholde charateristic
 
     // Create BLE characteristic for sensor data
     pSensorCharacteristic = bleService->createCharacteristic( 
