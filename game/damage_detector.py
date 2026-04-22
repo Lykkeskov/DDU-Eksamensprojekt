@@ -5,7 +5,7 @@ import time
 import asyncio
 from Getdata import vibrate_device
 
-# SCREEN CAPTURE SETTINGS
+# SCREEN CAPTURE SETTINGS :)
 
 HEALTH_BAR_REGION = {
     "top": 195,

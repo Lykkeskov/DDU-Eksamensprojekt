@@ -9,7 +9,9 @@ COMMAND_UUID = "dcba4321-dcba-4321-dcba-4321fedcba98"
 
 Devices = {
     "CodeCell_Right": "28:37:2F:C7:C5:D2",
-    "CodeCell_Left": "98:3D:AE:38:32:0E"
+    "CodeCell_Left": "98:3D:AE:38:32:0E",
+    "StepSensor_Left": "E0:5A:1B:A0:32:96",
+    "StepSensor_Right": "B4:8A:0A:8F:0D:DA"
 }
 
 # Forbind kun til devices der er tændt (undgå crash hvis de nene ikke er tændt)
@@ -56,11 +58,9 @@ def make_handler(name):
         '''
 
         try:
-            decoded = data.decode()
-            parsed = json.loads(decoded)
+            parsed = json.loads(data.decode())
         except Exception as e:
-            print("JSON parse error:", e)
-            print("Raw data:", data)
+            print("JSON error:", e)
             return
 
 
@@ -80,6 +80,8 @@ def make_handler(name):
         yLinAcceleration = parsed["ly"]
         zLinAcceleration = parsed["lz"]
 
+        print(f"[{name}] Flex: {flexValue} | Fist: {isFist}")
+
         slag_condition = (  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
                 abs(yAcceleration) > 6 and
                 abs(yLinAcceleration) > 7)
@@ -87,28 +89,36 @@ def make_handler(name):
 
             #and 145 <= abs(roll) <= 180 and 110 <= abs(pitch) <= 180'''
 
-        guard_condition = (abs(yLinAcceleration) < 2 and abs(yAcceleration) > 6 # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+        guard_condition = (abs(yLinAcceleration) < 2 and
+                           abs(yAcceleration) > 6
+        ) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
                            #-110 < roll < -70 and
-                           )
 
-        if slag_condition and isFist and slagAktiv == False:
+
+        if slag_condition and isFist and not slagAktiv:
             slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
             lastSlagTime = time.time()  # Definerer nu tidspunktet for slaget så cooldown kan bruges korrekt
-            print(f"\n[{name}] Slag registreret\n")
 
-            asyncio.create_task(trigger_vibration_all())
+            print(f"\n[{name}] Slag registreret"
+                  "\n"
+                  "\n"
+                  "\n")
 
-        elif guard_condition and slagAktiv == False:
+        elif guard_condition and not slagAktiv:
             print(f"\n[{name}] ", "Guard registreret"
                   "\n"
                   "\n"
                   "\n")
+
+        if time.time() - lastSlagTime >= cooldown:
+            slagAktiv = False
+        '''
         else:
             print(f"\n[{name}]")
             print("Accel:", "x", xAcceleration, "y", yAcceleration, "z", zAcceleration)
             print("Rot  :", "Roll", roll, "Pitch",pitch, "Yaw",yaw)
             print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)
-
+        '''
 
 
 
@@ -116,6 +126,16 @@ def make_handler(name):
             slagAktiv = False
     return notification_handler
 
+def pressurePlateHandler(name, data):
+    try:
+        value = data.decode().strip()
+        print(f"[{name}] Pressure:", value)
+
+        if value == "1":
+            print(f"[{name}] STEP DETECTED")
+
+    except Exception as e:
+        print("Pressure parse error:", e)
 
 async def vibrate_device(name):
     if name in ble_clients:
@@ -129,22 +149,34 @@ async def vibrate_device(name):
                 print("BLE error:", e)
 
 async def connect_device(name, address):
-    try:
-        client = BleakClient(address)
-        await client.connect(timeout=10.0)
+    while True:  # Auto-reconnect loop hvis codecell disconnecter :)
+        try:
+            print(f"Connecting to {name}...")
 
-        print(f"{name} connected")
+            client = BleakClient(address, timeout=20.0)
+            await asyncio.sleep(3) # Er det nødvendigt?
+            await client.connect()
 
-        ble_clients[name] = client
+            print(f"{name} connected")
 
-        await client.start_notify(CHAR_UUID, make_handler(name))
+            ble_clients[name] = client
 
-        while True:
-            await asyncio.sleep(1)
+            # def handle_disconnect(_):
+            #    print(f"{name} DISCONNECTED")
 
-    except Exception as e:
-        print(f"{name} FAILED:", e)
+            # client.set_disconnected_callback(handle_disconnect)
 
+            await client.start_notify(CHAR_UUID, make_handler(name))
+
+            # Stay alive while connected
+            while client.is_connected:
+                await asyncio.sleep(1)
+
+        except Exception as e:
+            print(f"{name} ERROR:", e)
+
+        print(f"{name} retrying in 3s...\n")
+        await asyncio.sleep(3)
 
 async def main():
     tasks = []
@@ -156,4 +188,5 @@ async def main():
     await asyncio.gather(*tasks)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
