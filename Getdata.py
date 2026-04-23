@@ -15,10 +15,10 @@ Devices = {
     "CodeCell_Left": "98:3D:AE:38:32:0E",
     "StepSensor_Left": "E0:5A:1B:A0:32:96",
     "StepSensor_Right": "B4:8A:0A:8F:0D:DA",
-    "JumpSensor": "E0:5A:1B:A0:32:96" # <--- Indsæt rigtig værdi
+    "JumpSensor": "E0:5A:1B:A0:32:96"
 }
 
-# Forbind kun til devices der er tændt (undgå crash hvis de nene ikke er tændt)
+# Forbind kun til devices der er tændt (undgå crash hvis den ene ikke er tændt)
 async def discover_devices():
     found = await BleakScanner.discover(timeout=5.0)
 
@@ -39,6 +39,8 @@ slagAktiv = False
 lastSlagTime = 0  # Tidspunkt for sidste slag
 cooldown = 1  # Cooldown mellem slag i sekunder (300 ms)
 
+guard_active = False
+
 # Bevægelses stuff
 last_step_time = 0
 last_jump_time = 0
@@ -47,6 +49,12 @@ jump_cooldown = 0.5
 async def trigger_vibration_all():
     for name in list(ble_clients.keys()):
         await vibrate_device(name)
+
+# Bruges til åben hånd slag, hvilket resulterer i en combo
+async def send_combo(sequence, delay=0.05):
+    for inp in sequence:
+        tap([inp])
+        await asyncio.sleep(delay)
 
 def make_handler(name):
     def notification_handler(sender, data):
@@ -161,47 +169,42 @@ def make_handler(name):
 
             # Sender inputs så vi kan konvertere til keyboard input
             inputs = mapper.map(punch=True)
-            send(inputs)
+            tap(inputs)
             print(f"[{name}] Slag → {inputs}")
 
-        elif guard_condition and not slagAktiv:
-            print(f"\n[{name}] ", "Guard registreret"
-                  "\n"
-                  "\n"
-                  "\n")
+        # slag med åben hånd (special move)
+        elif slag_condition and not isFist and not slagAktiv:
+            slagAktiv = True
+            lastSlagTime = time.time()
 
-            inputs = mapper.map(guard=True)
-            send(inputs)
+            print(f"[{name}] OPEN HAND PUNCH (SPECIAL MOVE)")
 
-            print(f"[{name}] GUARD")
+            asyncio.create_task(send_combo(["↓", "↓", "↑"]))
+
+
+        # Track guard state
+        global guard_active
+
+        if guard_condition:
+            if not guard_active:
+                guard_active = True
+                inputs = mapper.map(guard=True)
+                press(inputs)
+                print(f"[{name}] GUARD HOLD → {inputs}")
+        else:
+            if guard_active:
+                guard_active = False
+                inputs = mapper.map(guard=True)
+                release(inputs)
+                print(f"[{name}] GUARD RELEASE")
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
-        '''
-        else:
-            print(f"\n[{name}]")
-            print("Accel:", "x", xAcceleration, "y", yAcceleration, "z", zAcceleration)
-            print("Rot  :", "Roll", roll, "Pitch",pitch, "Yaw",yaw)
-            print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)
-        '''
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
     return notification_handler
 
-def pressurePlateHandler(name, data):
-    try:
-        value = data.decode().strip()
-        print(f"[{name}] Pressure:", value)
-
-        if value == "1":
-            inputs = mapper.map(forward=True)
-            send(inputs)
-            print(f"[{name}] STEP DETECTED")
-            print(f"[{name}] STEP → {inputs}")
-
-    except Exception as e:
-        print("Pressure parse error:", e)
 
 async def vibrate_device(name):
     if name in ble_clients:
