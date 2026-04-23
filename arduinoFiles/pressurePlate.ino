@@ -19,9 +19,15 @@ class MyServerCallbacks : public BLEServerCallbacks {
   }
 
   void onDisconnect(BLEServer *pServer) override {
-    Serial.println("BLE Disconnected");
-    delay(500);
-    BLEDevice::startAdvertising(); // Restart advertising
+  Serial.println("BLE Disconnected");
+  delay(500);
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);
+  pAdvertising->setMinPreferred(0x12);
+
+  BLEDevice::startAdvertising();
   }
 };
 
@@ -47,7 +53,13 @@ void setup() {
 
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->addServiceUUID("12345678-1234-5678-1234-56789abcdef0");
+    pAdvertising->setScanResponse(true);
+    pAdvertising->setMinPreferred(0x06);
+    pAdvertising->setMinPreferred(0x12);
+
     BLEDevice::startAdvertising();
+    delay(1000);
+    Serial.println("StepSensor READY");
 }
 
 void loop() {
@@ -70,4 +82,3 @@ void loop() {
 
   delay(50);
 }
-
