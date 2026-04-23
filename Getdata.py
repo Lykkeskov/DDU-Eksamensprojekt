@@ -15,7 +15,7 @@ Devices = {
     "CodeCell_Left": "98:3D:AE:38:32:0E",
     "StepSensor_Left": "E0:5A:1B:A0:32:96",
     "StepSensor_Right": "B4:8A:0A:8F:0D:DA",
-    "JumpSensor": "00:00:00:00:00:00", # <--- Indsæt rigtig værdi
+    "JumpSensor": "E0:5A:1B:A0:32:96" # <--- Indsæt rigtig værdi
 }
 
 # Forbind kun til devices der er tændt (undgå crash hvis de nene ikke er tændt)
@@ -93,13 +93,13 @@ def make_handler(name):
 
                 if now - last_jump_time > jump_cooldown:
 
-                    if jumpValue > 2:
+                    if jumpValue < -18:
                         last_jump_time = now
                         inputs = mapper.map(direction="UP")
                         send(inputs)
                         print(f"[{name}] JUMP → {inputs}")
 
-                    elif jumpValue < -14:
+                    elif jumpValue > -1:
                         last_jump_time = now
                         inputs = mapper.map(direction="DOWN")
                         send(inputs)
