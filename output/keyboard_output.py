@@ -1,6 +1,4 @@
-from pynput.keyboard import Controller, Key
-
-keyboard = Controller()
+import pydirectinput
 
 key_map = {
     "→": "d",
@@ -18,5 +16,4 @@ def send(inputs):
     for i in inputs:
         key = key_map.get(i)
         if key:
-            keyboard.press(key)
-            keyboard.release(key)
+            pydirectinput.press(key)

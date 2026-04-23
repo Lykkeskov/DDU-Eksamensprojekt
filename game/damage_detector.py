@@ -8,10 +8,10 @@ from Getdata import vibrate_device
 # SCREEN CAPTURE SETTINGS :)
 
 HEALTH_BAR_REGION = {
-    "top": 195,
-    "left": 25,
-    "width": 360,
-    "height": 6
+    "top": 50,
+    "left": 15,
+    "width": 800,
+    "height": 15
 }
 
 LOWER_YELLOW = np.array([20, 100, 100])
