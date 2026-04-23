@@ -11,7 +11,7 @@ key_map = {
     "2": "i",
     "3": "k",
     "4": "l",
-    "BL": "space"
+    "BL": "o"
 }
 
 def send(inputs):
