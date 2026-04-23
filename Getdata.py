@@ -2,7 +2,7 @@ import asyncio
 from bleak import BleakClient, BleakScanner
 import time
 import json
-from output.keyboard_output import send
+from output.keyboard_output import press, release, tap
 from game.game_input import GameInputMapper
 
 mapper = GameInputMapper()
@@ -57,33 +57,29 @@ def make_handler(name):
 
         # Step sensor input
         if "StepSensor" in name:
-            global last_step_time
             try:
                 stepValue = int(text)
 
+                if "Right" in name:
+                    direction = "RIGHT"
+                else:
+                    direction = "LEFT"
+
+                inputs = mapper.map(direction=direction)
+
                 if stepValue == 1:
-                    now = time.time()
-
-                    # Cooldown så ingen spam
-                    if now - last_step_time > 0.3:
-                        last_step_time = now
-
-                        # Vælg retning
-                        if "Right" in name:
-                            direction = "RIGHT"
-                        else:
-                            direction = "LEFT"
-
-                        inputs = mapper.map(direction=direction)
-                        send(inputs)
-
-                        print(f"[{name}] STEP → {inputs}")
+                    press(inputs)
+                    print(f"[{name}] HOLD → {inputs}")
+                else:
+                    release(inputs)
+                    print(f"[{name}] RELEASE → {inputs}")
 
             except Exception as e:
                 print("Step parse error:", e)
 
             return
 
+        # Jump sensor input
         if "JumpSensor" in name:
             global last_jump_time
 
@@ -93,17 +89,22 @@ def make_handler(name):
 
                 if now - last_jump_time > jump_cooldown:
 
+                    # Hop bruger tap for enkelt bevægelse
                     if jumpValue < -18:
                         last_jump_time = now
                         inputs = mapper.map(direction="UP")
-                        send(inputs)
+                        tap(inputs)
                         print(f"[{name}] JUMP → {inputs}")
 
+                    # Duck bruger press og release for vedvarende bevægelse indtil den stoppes
                     elif jumpValue > -1:
-                        last_jump_time = now
                         inputs = mapper.map(direction="DOWN")
-                        send(inputs)
-                        print(f"[{name}] DUCK → {inputs}")
+                        press(inputs)
+                        print(f"[{name}] DUCK HOLD → {inputs}")
+
+                    else:
+                        inputs = mapper.map(direction="DOWN")
+                        release(inputs)
 
             except Exception as e:
                 print("Jump parse error:", e)
