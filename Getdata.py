@@ -65,10 +65,16 @@ def make_handler(name):
 
         if "JumpSensor" in name:
             try:
-                jumpValue = int(text)
+                jumpValue = float(text)
 
-                if jumpValue == 1:
-                    print(f"[{name}] Hop registreret")
+                if jumpValue > 2:
+                    print(f"\n{name}: ", "Jump")
+
+                elif jumpValue < -14:
+                    print(f"\n{name}: ", "Duck")
+
+                else:
+                    print(f"\n{name}: ", jumpValue)
 
             except Exception as e:
                 print("Step parse error:", e)
