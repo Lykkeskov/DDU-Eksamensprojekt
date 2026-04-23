@@ -1,5 +1,5 @@
 class GameInputMapper:
-    def map(self, punch=False, direction=None):
+    def map(self, punch=False, direction=None, guard=False, jump=False, duck=False):
         inputs = []
 
         if direction == "RIGHT":
@@ -12,6 +12,9 @@ class GameInputMapper:
             inputs.append("↓")
 
         if punch:
-            inputs.append("1")  # MK11 front punch
+            inputs.append("1")
+
+        if guard:
+            inputs.append("BL")
 
         return inputs

@@ -39,6 +39,11 @@ slagAktiv = False
 lastSlagTime = 0  # Tidspunkt for sidste slag
 cooldown = 1  # Cooldown mellem slag i sekunder (300 ms)
 
+# Bevægelses stuff
+last_step_time = 0
+last_jump_time = 0
+jump_cooldown = 0.5
+
 async def trigger_vibration_all():
     for name in list(ble_clients.keys()):
         await vibrate_device(name)
@@ -52,11 +57,27 @@ def make_handler(name):
 
         # Step sensor input
         if "StepSensor" in name:
+            global last_step_time
             try:
                 stepValue = int(text)
 
                 if stepValue == 1:
-                    print(f"[{name}] Skridt registreret")
+                    now = time.time()
+
+                    # Cooldown så ingen spam
+                    if now - last_step_time > 0.3:
+                        last_step_time = now
+
+                        # Vælg retning
+                        if "Right" in name:
+                            direction = "RIGHT"
+                        else:
+                            direction = "LEFT"
+
+                        inputs = mapper.map(direction=direction)
+                        send(inputs)
+
+                        print(f"[{name}] STEP → {inputs}")
 
             except Exception as e:
                 print("Step parse error:", e)
@@ -64,20 +85,28 @@ def make_handler(name):
             return
 
         if "JumpSensor" in name:
+            global last_jump_time
+
             try:
                 jumpValue = float(text)
+                now = time.time()
 
-                if jumpValue > 2:
-                    print(f"\n{name}: ", "Jump")
+                if now - last_jump_time > jump_cooldown:
 
-                elif jumpValue < -14:
-                    print(f"\n{name}: ", "Duck")
+                    if jumpValue > 2:
+                        last_jump_time = now
+                        inputs = mapper.map(direction="UP")
+                        send(inputs)
+                        print(f"[{name}] JUMP → {inputs}")
 
-                else:
-                    print(f"\n{name}: ", jumpValue)
+                    elif jumpValue < -14:
+                        last_jump_time = now
+                        inputs = mapper.map(direction="DOWN")
+                        send(inputs)
+                        print(f"[{name}] DUCK → {inputs}")
 
             except Exception as e:
-                print("Step parse error:", e)
+                print("Jump parse error:", e)
 
             return
 
@@ -140,7 +169,7 @@ def make_handler(name):
                   "\n"
                   "\n")
 
-            inputs = ["BL"]  # mapped to space
+            inputs = mapper.map(guard=True)
             send(inputs)
 
             print(f"[{name}] GUARD")
@@ -165,9 +194,9 @@ def pressurePlateHandler(name, data):
         print(f"[{name}] Pressure:", value)
 
         if value == "1":
-            print(f"[{name}] STEP DETECTED")
-            inputs = ["→"]
+            inputs = mapper.map(forward=True)
             send(inputs)
+            print(f"[{name}] STEP DETECTED")
             print(f"[{name}] STEP → {inputs}")
 
     except Exception as e:
