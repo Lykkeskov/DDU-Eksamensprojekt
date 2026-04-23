@@ -10,12 +10,12 @@ mapper = GameInputMapper()
 ble_clients = {}
 COMMAND_UUID = "dcba4321-dcba-4321-dcba-4321fedcba98"
 
-
 Devices = {
     "CodeCell_Right": "28:37:2F:C7:C5:D2",
     "CodeCell_Left": "98:3D:AE:38:32:0E",
     "StepSensor_Left": "E0:5A:1B:A0:32:96",
-    "StepSensor_Right": "B4:8A:0A:8F:0D:DA"
+    "StepSensor_Right": "B4:8A:0A:8F:0D:DA",
+    "JumpSensor": "00:00:00:00:00:00", # <--- Indsæt rigtig værdi
 }
 
 # Forbind kun til devices der er tændt (undgå crash hvis de nene ikke er tændt)
@@ -36,8 +36,8 @@ CHAR_UUID = "abcd5678-abcd-5678-abcd-56789abcdef0"
 damage_flag = False
 
 slagAktiv = False
-lastSlagTime = 0  #Tidspunkt for sidste slag
-cooldown = 1  #Cooldown mellem slag i sekunder (300 ms)
+lastSlagTime = 0  # Tidspunkt for sidste slag
+cooldown = 1  # Cooldown mellem slag i sekunder (300 ms)
 
 async def trigger_vibration_all():
     for name in list(ble_clients.keys()):
@@ -57,6 +57,18 @@ def make_handler(name):
 
                 if stepValue == 1:
                     print(f"[{name}] Skridt registreret")
+
+            except Exception as e:
+                print("Step parse error:", e)
+
+            return
+
+        if "JumpSensor" in name:
+            try:
+                jumpValue = int(text)
+
+                if jumpValue == 1:
+                    print(f"[{name}] Hop registreret")
 
             except Exception as e:
                 print("Step parse error:", e)
@@ -96,9 +108,9 @@ def make_handler(name):
 
             #and 145 <= abs(roll) <= 180 and 110 <= abs(pitch) <= 180'''
 
-        guard_condition = (abs(yLinAcceleration) < 2 and
-                           abs(yAcceleration) > 6
-        ) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+        guard_condition = (
+                abs(yLinAcceleration) < 2 and
+                abs(yAcceleration) > 6) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
                            #-110 < roll < -70 and
 
 
@@ -136,8 +148,6 @@ def make_handler(name):
             print("Rot  :", "Roll", roll, "Pitch",pitch, "Yaw",yaw)
             print("Lin  :","x" ,xLinAcceleration, "y", yLinAcceleration, "z",zLinAcceleration)
         '''
-
-
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
