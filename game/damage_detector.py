@@ -45,7 +45,7 @@ async def main():
             total_pixels = HEALTH_BAR_REGION["width"] * HEALTH_BAR_REGION["height"]
             health_ratio = health_pixels / total_pixels
 
-            print(f"Health ratio: {health_ratio:.3f}")
+            #print(f"Health ratio: {health_ratio:.3f}")
 
             if prev_health_ratio is not None:
                 diff = prev_health_ratio - health_ratio

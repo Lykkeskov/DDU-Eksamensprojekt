@@ -11,11 +11,16 @@ ble_clients = {}
 COMMAND_UUID = "dcba4321-dcba-4321-dcba-4321fedcba98"
 
 Devices = {
-    "CodeCell_Right": "28:37:2F:C7:C5:D2",
-    "CodeCell_Left": "98:3D:AE:38:32:0E",
-    "StepSensor_Left": "E0:5A:1B:A0:32:96",
-    "StepSensor_Right": "B4:8A:0A:8F:0D:DA",
-    "JumpSensor": "E0:5A:1B:A0:32:96"
+    "CodeCell_Right": "DC:06:75:2F:9D:9A",
+    "CodeCell_Left": "28:37:2F:C7:C5:D2",
+    "StepSensor_Left": "B4:8A:0A:8F:0D:DA",
+    "StepSensor_Right": "E0:5A:1B:A0:32:96",
+    "JumpSensor": "98:3D:AE:38:32:0E",
+}
+
+guardStates = {
+    "CodeCell_Right": 0,
+    "CodeCell_Left": 0
 }
 
 # Forbind kun til devices der er tændt (undgå crash hvis den ene ikke er tændt)
@@ -37,14 +42,18 @@ damage_flag = False
 
 slagAktiv = False
 lastSlagTime = 0  # Tidspunkt for sidste slag
-cooldown = 1  # Cooldown mellem slag i sekunder (300 ms)
+cooldown = 0.45  # Cooldown mellem slag i sekunder (600 ms)
 
 guard_active = False
 
 # Bevægelses stuff
 last_step_time = 0
 last_jump_time = 0
+duckActive = False
 jump_cooldown = 0.5
+
+dataPrintCooldown = 0.1
+lastDataPrint = 0
 
 async def trigger_vibration_all():
     for name in list(ble_clients.keys()):
@@ -58,10 +67,11 @@ async def send_combo(sequence, delay=0.05):
 
 def make_handler(name):
     def notification_handler(sender, data):
-        global slagAktiv, lastSlagTime, cooldown
+        global slagAktiv, lastSlagTime, cooldown, dataPrintCooldown, lastDataPrint, guardStates, duckActive, jump_cooldown
 
         text = data.decode().strip()
         print(f"[{name}] RAW:", text)
+        now = time.time()
 
         # Step sensor input
         if "StepSensor" in name:
@@ -93,32 +103,33 @@ def make_handler(name):
 
             try:
                 jumpValue = float(text)
-                now = time.time()
+                print(jumpValue)
 
                 if now - last_jump_time > jump_cooldown:
 
                     # Hop bruger tap for enkelt bevægelse
-                    if jumpValue < -18:
+                    if jumpValue < -16 and duckActive == False:
                         last_jump_time = now
                         inputs = mapper.map(direction="UP")
                         tap(inputs)
                         print(f"[{name}] JUMP → {inputs}")
 
+                    elif jumpValue < -16 and duckActive == True:
+                        duckActive = False
+                        inputs = mapper.map(direction="DOWN")
+                        release(inputs)
+
                     # Duck bruger press og release for vedvarende bevægelse indtil den stoppes
-                    elif jumpValue > -1:
+                    elif jumpValue > -3 or duckActive == True:
+                        duckActive = True
                         inputs = mapper.map(direction="DOWN")
                         press(inputs)
                         print(f"[{name}] DUCK HOLD → {inputs}")
-
-                    else:
-                        inputs = mapper.map(direction="DOWN")
-                        release(inputs)
 
             except Exception as e:
                 print("Jump parse error:", e)
 
             return
-
 
         # CodeCell hanske input
         try:
@@ -143,20 +154,22 @@ def make_handler(name):
         yLinAcceleration = parsed["ly"]
         zLinAcceleration = parsed["lz"]
 
-        print(f"[{name}] Flex: {flexValue} | Fist: {isFist}")
+        if "Left" in name:
+            xAcceleration *= -1
+            xLinAcceleration *= -1
+
+        #print(f"[{name}] Flex: {flexValue} | Fist: {isFist}")
 
         slag_condition = (  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                abs(yAcceleration) > 6 and
-                abs(yLinAcceleration) > 7)
-
+                abs(xAcceleration) > 15 and
+                abs(xLinAcceleration) > 4
+                )
 
             #and 145 <= abs(roll) <= 180 and 110 <= abs(pitch) <= 180'''
 
         guard_condition = (
-                abs(yLinAcceleration) < 2 and
-                abs(yAcceleration) > 6) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                           #-110 < roll < -70 and
-
+                abs(xLinAcceleration) < 2 and
+                xAcceleration > 6) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
 
         if slag_condition and isFist and not slagAktiv:
             slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
@@ -181,28 +194,41 @@ def make_handler(name):
 
             asyncio.create_task(send_combo(["↓", "↓", "↑"]))
 
-
         # Track guard state
         global guard_active
 
         if guard_condition:
-            if not guard_active:
+            guardStates[name] = 1
+        else:
+            guardStates[name] = 0
+
+        # Check combined state AFTER update
+        both_guarding = (
+                guardStates.get("CodeCell_Right", 0) == 1 and
+                guardStates.get("CodeCell_Left", 0) == 1
+        )
+
+        if not guard_active and both_guarding:
                 guard_active = True
                 inputs = mapper.map(guard=True)
                 press(inputs)
                 print(f"[{name}] GUARD HOLD → {inputs}")
-        else:
-            if guard_active:
-                guard_active = False
-                inputs = mapper.map(guard=True)
-                release(inputs)
-                print(f"[{name}] GUARD RELEASE")
+
+        elif guard_active and not both_guarding:
+            guard_active = False
+            inputs = mapper.map(guard=True)
+            release(inputs)
+            print(f"[{name}] GUARD RELEASE")
 
         if time.time() - lastSlagTime >= cooldown:
             slagAktiv = False
 
-        if time.time() - lastSlagTime >= cooldown:
-            slagAktiv = False
+
+        if time.time() - lastDataPrint > dataPrintCooldown:
+            print(name)
+            print("Acceleration x: ", xAcceleration)
+            print("Linear Acc x: ", xLinAcceleration)
+
     return notification_handler
 
 
