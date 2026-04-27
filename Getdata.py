@@ -161,15 +161,16 @@ def make_handler(name):
         #print(f"[{name}] Flex: {flexValue} | Fist: {isFist}")
 
         slag_condition = (  # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
-                abs(xAcceleration) > 15 and
-                abs(xLinAcceleration) > 4
+                abs(xAcceleration) > 12 and
+                abs(xLinAcceleration) > 4 or abs(xAcceleration) > 18 or abs(xLinAcceleration) > 18
                 )
 
             #and 145 <= abs(roll) <= 180 and 110 <= abs(pitch) <= 180'''
 
         guard_condition = (
-                abs(xLinAcceleration) < 2 and
-                xAcceleration > 6) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
+                abs(xLinAcceleration) < 3.5 and
+                xAcceleration > 6 and
+                -160 < roll < -80) # Sat op så det ser lidt pænere ud og hvis den skal bruges til andre ting
 
         if slag_condition and isFist and not slagAktiv:
             slagAktiv = True  # Bruges til at forhindre dobbelt registrering af slag
